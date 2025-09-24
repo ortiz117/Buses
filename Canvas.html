@@ -1,0 +1,1171 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diagrama Avanzado de Buses de PC</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0c0c0c 0%, #1a1a2e 50%, #16213e 100%);
+            min-height: 100vh;
+            color: #ffffff;
+            overflow-x: auto;
+            position: relative;
+        }
+
+        /* Animated background particles */
+        .bg-particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+        }
+
+        .particle {
+            position: absolute;
+            background: #00d4ff;
+            border-radius: 50%;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(180deg); }
+        }
+
+        .container {
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d4ff, #ff0080);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-align: center;
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            color: #a0a0a0;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1e3c72, #2a5298);
+            border: none;
+            padding: 12px 24px;
+            border-radius: 12px;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transition: left 0.5s;
+        }
+
+        .btn:hover::before {
+            left: 100%;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(0, 212, 255, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn.danger {
+            background: linear-gradient(135deg, #ff416c, #ff4b2b);
+        }
+
+        .btn.success {
+            background: linear-gradient(135deg, #4facfe, #00f2fe);
+        }
+
+        .diagram-container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        svg {
+            background: transparent;
+            border-radius: 15px;
+        }
+
+        .component {
+            filter: drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3));
+            transition: all 0.3s ease;
+        }
+
+        .component:hover {
+            transform: scale(1.05);
+            filter: drop-shadow(0 8px 25px rgba(0, 212, 255, 0.4));
+        }
+
+        .component-text {
+            font-family: 'JetBrains Mono', monospace;
+            font-weight: 500;
+            font-size: 14px;
+            fill: #ffffff;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.7);
+        }
+
+        .bus-line {
+            stroke-width: 4;
+            fill: none;
+            stroke-linecap: round;
+            filter: drop-shadow(0 0 8px currentColor);
+            opacity: 0.8;
+        }
+
+        .bus-line.active {
+            opacity: 1;
+            stroke-width: 6;
+            animation: pulse-glow 1.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes pulse-glow {
+            from { 
+                filter: drop-shadow(0 0 8px currentColor);
+                stroke-width: 4;
+            }
+            to { 
+                filter: drop-shadow(0 0 20px currentColor);
+                stroke-width: 6;
+            }
+        }
+
+        .data-packet {
+            fill: #00ff88;
+            stroke: #ffffff;
+            stroke-width: 2;
+            filter: drop-shadow(0 0 15px #00ff88);
+            opacity: 0;
+        }
+
+        .data-packet.visible {
+            opacity: 1;
+            animation: packet-glow 0.5s ease-in-out infinite alternate;
+        }
+
+        @keyframes packet-glow {
+            from { filter: drop-shadow(0 0 15px #00ff88); }
+            to { filter: drop-shadow(0 0 25px #00ff88); }
+        }
+
+        .bus-label {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 500;
+            fill: #ffffff;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+        }
+
+        .speed-indicator {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 10px;
+            fill: #00d4ff;
+            font-weight: 600;
+        }
+
+        .legend {
+            display: flex;
+            gap: 20px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 12px;
+            border-radius: 8px;
+            backdrop-filter: blur(5px);
+        }
+
+        .legend-color {
+            width: 20px;
+            height: 4px;
+            border-radius: 2px;
+        }
+
+        .status-panel {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: rgba(0, 0, 0, 0.8);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            min-width: 200px;
+            z-index: 1000;
+        }
+
+        .status-title {
+            font-weight: 600;
+            margin-bottom: 10px;
+            color: #00d4ff;
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+            font-size: 12px;
+        }
+
+        .status-value {
+            color: #00ff88;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        @media (max-width: 768px) {
+            h1 { font-size: 2rem; }
+            .container { padding: 10px; }
+            .diagram-container { padding: 15px; }
+            .status-panel { 
+                position: relative; 
+                top: auto; 
+                right: auto; 
+                margin-top: 20px; 
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="bg-particles" id="particles"></div>
+    
+    <div class="container">
+        <h1>Sistema de Buses de PC</h1>
+        <p class="subtitle">Visualización interactiva del flujo de datos en arquitectura de computadoras</p>
+        
+        <div class="controls">
+            <button class="btn" id="auto-demo">🚀 Demo Automático</button>
+            <button class="btn success" id="read-ram">📥 Leer RAM</button>
+            <button class="btn success" id="write-ram">📤 Escribir RAM</button>
+            <button class="btn" id="gpu-render">🎮 Renderizar GPU</button>
+            <button class="btn" id="ssd-read">💾 Leer SSD</button>
+            <button class="btn" id="hdd-write">🗄️ Escribir HDD</button>
+            <button class="btn" id="network-data">🌐 Red</button>
+            <button class="btn danger" id="reset">🔄 Reset</button>
+        </div>
+
+        <div class="diagram-container">
+            <svg width="1100" height="700" viewBox="0 0 1100 700">
+                <!-- Definiciones de gradientes -->
+                <defs>
+                    <linearGradient id="cpuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ff6b6b"/>
+                        <stop offset="100%" style="stop-color:#ee5a52"/>
+                    </linearGradient>
+                    <linearGradient id="ramGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#4ecdc4"/>
+                        <stop offset="100%" style="stop-color:#44a08d"/>
+                    </linearGradient>
+                    <linearGradient id="gpuGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#a8edea"/>
+                        <stop offset="100%" style="stop-color:#fed6e3"/>
+                    </linearGradient>
+                    <linearGradient id="chipsetGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#ffecd2"/>
+                        <stop offset="100%" style="stop-color:#fcb69f"/>
+                    </linearGradient>
+                    <linearGradient id="storageGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                        <stop offset="0%" style="stop-color:#c3cfe2"/>
+                        <stop offset="100%" style="stop-color:#667eea"/>
+                    </linearGradient>
+                </defs>
+
+                <!-- Componentes principales -->
+                <g class="component" id="cpu-comp">
+                    <rect x="80" y="120" width="180" height="100" fill="url(#cpuGrad)" rx="15" />
+                    <text class="component-text" x="170" y="165" text-anchor="middle">CPU</text>
+                    <text class="component-text" x="170" y="185" text-anchor="middle" font-size="10">Intel/AMD</text>
+                    <text class="speed-indicator" x="170" y="200" text-anchor="middle">3.8 GHz</text>
+                </g>
+
+                <g class="component" id="ram-comp">
+                    <rect x="80" y="450" width="180" height="80" fill="url(#ramGrad)" rx="12" />
+                    <text class="component-text" x="170" y="485" text-anchor="middle">RAM</text>
+                    <text class="component-text" x="170" y="500" text-anchor="middle" font-size="10">DDR4/DDR5</text>
+                    <text class="speed-indicator" x="170" y="515" text-anchor="middle">3200 MHz</text>
+                </g>
+
+                <g class="component" id="gpu-comp">
+                    <rect x="350" y="60" width="160" height="90" fill="url(#gpuGrad)" rx="12" />
+                    <text class="component-text" x="430" y="100" text-anchor="middle">GPU</text>
+                    <text class="component-text" x="430" y="115" text-anchor="middle" font-size="10">RTX/RX</text>
+                    <text class="speed-indicator" x="430" y="130" text-anchor="middle">PCIe 4.0</text>
+                </g>
+
+                <g class="component" id="northbridge-comp">
+                    <rect x="350" y="250" width="160" height="70" fill="url(#chipsetGrad)" rx="10" />
+                    <text class="component-text" x="430" y="285" text-anchor="middle">Northbridge</text>
+                    <text class="speed-indicator" x="430" y="300" text-anchor="middle">DMI 4.0</text>
+                </g>
+
+                <g class="component" id="southbridge-comp">
+                    <rect x="600" y="400" width="160" height="70" fill="url(#chipsetGrad)" rx="10" />
+                    <text class="component-text" x="680" y="435" text-anchor="middle">Southbridge</text>
+                    <text class="speed-indicator" x="680" y="450" text-anchor="middle">PCH</text>
+                </g>
+
+                <g class="component" id="ssd-comp">
+                    <rect x="850" y="300" width="120" height="60" fill="url(#storageGrad)" rx="8" />
+                    <text class="component-text" x="910" y="330" text-anchor="middle">NVMe SSD</text>
+                    <text class="speed-indicator" x="910" y="345" text-anchor="middle">7000 MB/s</text>
+                </g>
+
+                <g class="component" id="hdd-comp">
+                    <rect x="850" y="400" width="120" height="60" fill="url(#storageGrad)" rx="8" />
+                    <text class="component-text" x="910" y="430" text-anchor="middle">HDD</text>
+                    <text class="speed-indicator" x="910" y="445" text-anchor="middle">150 MB/s</text>
+                </g>
+
+                <g class="component" id="monitor-comp">
+                    <rect x="850" y="60" width="140" height="90" fill="url(#storageGrad)" rx="10" />
+                    <text class="component-text" x="920" y="100" text-anchor="middle">Monitor</text>
+                    <text class="speed-indicator" x="920" y="115" text-anchor="middle">4K@144Hz</text>
+                </g>
+
+                <g class="component" id="network-comp">
+                    <rect x="850" y="180" width="120" height="60" fill="url(#storageGrad)" rx="8" />
+                    <text class="component-text" x="910" y="210" text-anchor="middle">Network</text>
+                    <text class="speed-indicator" x="910" y="225" text-anchor="middle">1 Gbps</text>
+                </g>
+
+                <!-- Buses -->
+                <path id="cpu-ram-bus" class="bus-line" stroke="#4ecdc4" 
+                      d="M170,220 V320 Q170,340 190,340 H170 V450" />
+                <text class="bus-label" x="140" y="335" text-anchor="middle">Memory Bus</text>
+                <text class="speed-indicator" x="140" y="350" text-anchor="middle">51.2 GB/s</text>
+
+                <path id="cpu-nb-bus" class="bus-line" stroke="#ff9500" 
+                      d="M260,170 H350" />
+                <text class="bus-label" x="305" y="160" text-anchor="middle">Front Side Bus</text>
+                <text class="speed-indicator" x="305" y="145" text-anchor="middle">15 GB/s</text>
+
+                <path id="gpu-nb-bus" class="bus-line" stroke="#a855f7" 
+                      d="M430,150 V250" />
+                <text class="bus-label" x="380" y="200" text-anchor="middle">PCIe x16</text>
+                <text class="speed-indicator" x="380" y="215" text-anchor="middle">32 GB/s</text>
+
+                <path id="nb-sb-bus" class="bus-line" stroke="#06b6d4" 
+                      d="M510,285 Q550,285 550,320 V380 Q550,400 600,400 H600 V435" />
+                <text class="bus-label" x="555" y="340" text-anchor="middle">DMI</text>
+                <text class="speed-indicator" x="555" y="355" text-anchor="middle">8 GB/s</text>
+
+                <path id="sb-ssd-bus" class="bus-line" stroke="#ef4444" 
+                      d="M760,430 Q800,430 800,370 Q800,330 850,330" />
+                <text class="bus-label" x="805" y="380" text-anchor="middle">PCIe 4.0</text>
+                <text class="speed-indicator" x="805" y="395" text-anchor="middle">7 GB/s</text>
+
+                <path id="sb-hdd-bus" class="bus-line" stroke="#f59e0b" 
+                      d="M760,435 H850" />
+                <text class="bus-label" x="805" y="425" text-anchor="middle">SATA III</text>
+                <text class="speed-indicator" x="805" y="410" text-anchor="middle">600 MB/s</text>
+
+                <path id="gpu-monitor-bus" class="bus-line" stroke="#10b981" 
+                      d="M510,105 H850" />
+                <text class="bus-label" x="680" y="95" text-anchor="middle">DisplayPort/HDMI</text>
+                <text class="speed-indicator" x="680" y="80" text-anchor="middle">32.4 Gbps</text>
+
+                <path id="sb-network-bus" class="bus-line" stroke="#8b5cf6" 
+                      d="M760,420 Q800,420 800,380 Q800,240 Q800,220 Q800,200 850,200 H850 V210" />
+                <text class="bus-label" x="825" y="310" text-anchor="middle">PCIe</text>
+
+                <!-- Paquetes de datos -->
+                <circle id="packet1" class="data-packet" r="6" />
+                <circle id="packet2" class="data-packet" r="6" />
+                <circle id="packet3" class="data-packet" r="6" />
+                <circle id="packet4" class="data-packet" r="6" />
+                <circle id="packet5" class="data-packet" r="6" />
+                <circle id="packet6" class="data-packet" r="6" />
+                <circle id="packet7" class="data-packet" r="6" />
+            </svg>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item">
+                <div class="legend-color" style="background: #4ecdc4;"></div>
+                <span>Memory Bus (DDR)</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ff9500;"></div>
+                <span>CPU Bus</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #a855f7;"></div>
+                <span>PCIe GPU</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #06b6d4;"></div>
+                <span>Chipset Link</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #ef4444;"></div>
+                <span>NVMe PCIe</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #f59e0b;"></div>
+                <span>SATA</span>
+            </div>
+            <div class="legend-item">
+                <div class="legend-color" style="background: #10b981;"></div>
+                <span>Display</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="status-panel">
+        <div class="status-title">Estado del Sistema</div>
+        <div class="status-item">
+            <span>CPU Load:</span>
+            <span class="status-value" id="cpu-load">15%</span>
+        </div>
+        <div class="status-item">
+            <span>RAM Usage:</span>
+            <span class="status-value" id="ram-usage">8.2GB</span>
+        </div>
+        <div class="status-item">
+            <span>GPU Load:</span>
+            <span class="status-value" id="gpu-load">45%</span>
+        </div>
+        <div class="status-item">
+            <span>Bus Activity:</span>
+            <span class="status-value" id="bus-activity">Normal</span>
+        </div>
+        <div class="status-item">
+            <span>Data Transfer:</span>
+            <span class="status-value" id="data-transfer">2.1 GB/s</span>
+        </div>
+    </div>
+
+    <script>
+        // Crear partículas de fondo
+        function createParticles() {
+            const container = document.getElementById('particles');
+            const particleCount = 50;
+            
+            for (let i = 0; i < particleCount; i++) {
+                const particle = document.createElement('div');
+                particle.className = 'particle';
+                particle.style.left = Math.random() * 100 + '%';
+                particle.style.top = Math.random() * 100 + '%';
+                particle.style.width = Math.random() * 4 + 1 + 'px';
+                particle.style.height = particle.style.width;
+                particle.style.animationDelay = Math.random() * 6 + 's';
+                particle.style.animationDuration = (Math.random() * 3 + 3) + 's';
+                container.appendChild(particle);
+            }
+        }
+
+        createParticles();
+
+        // Variables globales
+        let activeAnimations = [];
+        let isAnimating = false;
+
+        // Elementos DOM
+        const packets = [
+            document.getElementById('packet1'),
+            document.getElementById('packet2'),
+            document.getElementById('packet3'),
+            document.getElementById('packet4'),
+            document.getElementById('packet5'),
+            document.getElementById('packet6'),
+            document.getElementById('packet7')
+        ];
+
+        const buses = {
+            'cpu-ram': document.getElementById('cpu-ram-bus'),
+            'cpu-nb': document.getElementById('cpu-nb-bus'),
+            'gpu-nb': document.getElementById('gpu-nb-bus'),
+            'nb-sb': document.getElementById('nb-sb-bus'),
+            'sb-ssd': document.getElementById('sb-ssd-bus'),
+            'sb-hdd': document.getElementById('sb-hdd-bus'),
+            'gpu-monitor': document.getElementById('gpu-monitor-bus'),
+            'sb-network': document.getElementById('sb-network-bus')
+        };
+
+        const components = {
+            cpu: document.getElementById('cpu-comp'),
+            ram: document.getElementById('ram-comp'),
+            gpu: document.getElementById('gpu-comp'),
+            northbridge: document.getElementById('northbridge-comp'),
+            southbridge: document.getElementById('southbridge-comp'),
+            ssd: document.getElementById('ssd-comp'),
+            hdd: document.getElementById('hdd-comp'),
+            monitor: document.getElementById('monitor-comp'),
+            network: document.getElementById('network-comp')
+        };
+
+        // Funciones de utilidad
+        function resetAll() {
+            packets.forEach(p => {
+                p.classList.remove('visible');
+                p.style.transform = 'translate(0, 0)';
+            });
+            
+            Object.values(buses).forEach(bus => {
+                bus.classList.remove('active');
+            });
+
+            Object.values(components).forEach(comp => {
+                comp.style.transform = 'scale(1)';
+            });
+
+            isAnimating = false;
+            updateStatus('Sistema en reposo');
+        }
+
+        function activateBus(busId, duration = 2000) {
+            const bus = buses[busId];
+            if (bus) {
+                bus.classList.add('active');
+                setTimeout(() => bus.classList.remove('active'), duration);
+            }
+        }
+
+        function animatePacket(packet, path, duration = 1500, callback) {
+            packet.classList.add('visible');
+            
+            // Simular movimiento a lo largo del path usando transform
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += 2;
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        packet.classList.remove('visible');
+                        if (callback) callback();
+                    }, 200);
+                    return;
+                }
+                
+                const x = progress * 4; // Movimiento simplificado
+                const y = Math.sin(progress * 0.1) * 10;
+                packet.style.transform = `translate(${x}px, ${y}px)`;
+            }, duration / 50);
+        }
+
+        function highlightComponent(compId, duration = 1000) {
+            const comp = components[compId];
+            if (comp) {
+                comp.style.transform = 'scale(1.1)';
+                comp.style.filter = 'drop-shadow(0 0 20px #00d4ff)';
+                setTimeout(() => {
+                    comp.style.transform = 'scale(1)';
+                    comp.style.filter = 'drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3))';
+                }, duration);
+            }
+        }
+
+        function updateStatus(message) {
+            document.getElementById('bus-activity').textContent = message;
+            
+            // Simular cambios en otros valores
+            document.getElementById('cpu-load').textContent = (Math.random() * 80 + 10).toFixed(0) + '%';
+            document.getElementById('ram-usage').textContent = (Math.random() * 8 + 4).toFixed(1) + 'GB';
+            document.getElementById('gpu-load').textContent = (Math.random() * 90 + 5).toFixed(0) + '%';
+            document.getElementById('data-transfer').textContent = (Math.random() * 5 + 0.5).toFixed(1) + ' GB/s';
+        }
+
+        // Animaciones específicas
+        function readRAM() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            updateStatus('Leyendo RAM...');
+            activateBus('cpu-ram');
+            highlightComponent('ram');
+            highlightComponent('cpu');
+            
+            animatePacket(packets[0], 'cpu-ram-bus', 1200, () => {
+                updateStatus('Datos cargados en CPU');
+                setTimeout(() => {
+                    isAnimating = false;
+                }, 1000);
+            });
+        }
+
+        function writeRAM() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            updateStatus('Escribiendo a RAM...');
+            activateBus('cpu-ram');
+            highlightComponent('cpu');
+            highlightComponent('ram');
+            
+            animatePacket(packets[1], 'cpu-ram-bus', 1200, () => {
+                updateStatus('Datos guardados en RAM');
+                setTimeout(() => {
+                    isAnimating = false;
+                }, 1000);
+            });
+        }
+
+        function gpuRender() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            updateStatus('Renderizando GPU...');
+            
+            // CPU → Northbridge → GPU
+            activateBus('cpu-nb', 800);
+            highlightComponent('cpu');
+            
+            setTimeout(() => {
+                activateBus('gpu-nb', 1000);
+                highlightComponent('northbridge');
+                highlightComponent('gpu');
+            }, 400);
+            
+            setTimeout(() => {
+                activateBus('gpu-monitor', 1200);
+                highlightComponent('monitor');
+                updateStatus('Imagen renderizada');
+            }, 1000);
+
+            animatePacket(packets[2], 'cpu-nb-bus', 800);
+            setTimeout(() => {
+                animatePacket(packets[3], 'gpu-nb-bus', 1000);
+            }, 400);
+            setTimeout(() => {
+                animatePacket(packets[4], 'gpu-monitor-bus', 1200, () => {
+                    setTimeout(() => {
+                        isAnimating = false;
+                    }, 1000);
+                });
+            }, 1000);
+        }
+
+        function readSSD() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            updateStatus('Leyendo NVMe SSD...');
+            activateBus('sb-ssd');
+            highlightComponent('ssd');
+            highlightComponent('southbridge');
+            
+            setTimeout(() => {
+                activateBus('nb-sb');
+                highlightComponent('northbridge');
+            }, 600);
+            
+            setTimeout(() => {
+                activateBus('cpu-nb');
+                highlightComponent('cpu');
+            }, 1200);
+            
+            animatePacket(packets[5], 'sb-ssd-bus', 800);
+            setTimeout(() => {
+                animatePacket(packets[6], 'nb-sb-bus', 1000, () => {
+                    updateStatus('Datos leídos del SSD');
+                    setTimeout(() => {
+                        isAnimating = false;
+                    }, 1000);
+                });
+            }, 600);
+        }
+
+        function writeHDD() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            updateStatus('Escribiendo a HDD...');
+            activateBus('cpu-nb', 600);
+            highlightComponent('cpu');
+            
+            setTimeout(() => {
+                activateBus('nb-sb', 800);
+                highlightComponent('northbridge');
+                highlightComponent('southbridge');
+            }, 400);
+            
+            setTimeout(() => {
+                activateBus('sb-hdd', 1500);
+                highlightComponent('hdd');
+                updateStatus('Datos escritos en HDD');
+            }, 1000);
+
+            animatePacket(packets[0], 'cpu-nb-bus', 600);
+            setTimeout(() => {
+                animatePacket(packets[1], 'nb-sb-bus', 800);
+            }, 400);
+            setTimeout(() => {
+                animatePacket(packets[2], 'sb-hdd-bus', 1500, () => {
+                    setTimeout(() => {
+                        isAnimating = false;
+                    }, 1000);
+                });
+            }, 1000);
+        }
+
+        function networkData() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            updateStatus('Transfiriendo datos por red...');
+            activateBus('sb-network');
+            highlightComponent('network');
+            highlightComponent('southbridge');
+            
+            animatePacket(packets[3], 'sb-network-bus', 1800, () => {
+                updateStatus('Datos enviados por red');
+                setTimeout(() => {
+                    isAnimating = false;
+                }, 1000);
+            });
+        }
+
+        function autoDemo() {
+            if (isAnimating) return;
+            isAnimating = true;
+            
+            updateStatus('🚀 Iniciando demo completo...');
+            
+            // Activar todos los buses con efectos visuales
+            Object.values(buses).forEach((bus, index) => {
+                setTimeout(() => {
+                    bus.classList.add('active');
+                    bus.style.animationDuration = (Math.random() * 1 + 1.5) + 's';
+                }, index * 100);
+            });
+            
+            // Secuencia compleja de operaciones
+            const demoSequence = async () => {
+                // Fase 1: Boot sequence - Activación del sistema
+                updateStatus('⚡ Secuencia de arranque...');
+                setTimeout(() => {
+                    Object.values(components).forEach((comp, index) => {
+                        setTimeout(() => {
+                            comp.style.transform = 'scale(1.1)';
+                            comp.style.filter = 'drop-shadow(0 0 20px #00d4ff)';
+                            setTimeout(() => {
+                                comp.style.transform = 'scale(1)';
+                                comp.style.filter = 'drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3))';
+                            }, 300);
+                        }, index * 150);
+                    });
+                }, 500);
+                
+                // Fase 2: Carga inicial del sistema operativo
+                setTimeout(() => {
+                    updateStatus('💾 Cargando sistema operativo...');
+                    // Múltiples lecturas de almacenamiento
+                    animatePacket(packets[0], 'sb-ssd-bus', 800);
+                    animatePacket(packets[1], 'sb-hdd-bus', 1200);
+                    highlightComponent('ssd');
+                    highlightComponent('hdd');
+                    highlightComponent('southbridge');
+                }, 2000);
+                
+                setTimeout(() => {
+                    // Datos van al northbridge
+                    animatePacket(packets[2], 'nb-sb-bus', 1000);
+                    highlightComponent('northbridge');
+                }, 3000);
+                
+                setTimeout(() => {
+                    // Datos llegan a RAM
+                    animatePacket(packets[3], 'cpu-ram-bus', 800);
+                    highlightComponent('ram');
+                    highlightComponent('cpu');
+                }, 4000);
+                
+                // Fase 3: Aplicación gráfica intensa
+                setTimeout(() => {
+                    updateStatus('🎮 Ejecutando aplicación 3D...');
+                    // CPU envía comandos a GPU
+                    animatePacket(packets[4], 'cpu-nb-bus', 600);
+                    setTimeout(() => {
+                        animatePacket(packets[5], 'gpu-nb-bus', 800);
+                        highlightComponent('gpu');
+                    }, 400);
+                    
+                    // GPU renderiza y envía a monitor
+                    setTimeout(() => {
+                        animatePacket(packets[6], 'gpu-monitor-bus', 1000);
+                        highlightComponent('monitor');
+                    }, 1200);
+                }, 5500);
+                
+                // Fase 4: Operaciones simultáneas del sistema
+                setTimeout(() => {
+                    updateStatus('⚙️ Multitarea del sistema...');
+                    // Múltiples operaciones en paralelo
+                    
+                    // Lectura de RAM por CPU
+                    animatePacket(packets[0], 'cpu-ram-bus', 900);
+                    highlightComponent('cpu');
+                    highlightComponent('ram');
+                    
+                    // Escritura a SSD
+                    setTimeout(() => {
+                        animatePacket(packets[1], 'nb-sb-bus', 800);
+                        setTimeout(() => {
+                            animatePacket(packets[2], 'sb-ssd-bus', 1000);
+                            highlightComponent('ssd');
+                        }, 400);
+                    }, 300);
+                    
+                    // Actividad de red
+                    setTimeout(() => {
+                        animatePacket(packets[3], 'sb-network-bus', 1200);
+                        highlightComponent('network');
+                    }, 600);
+                    
+                }, 7500);
+                
+                // Fase 5: Transferencia masiva de datos
+                setTimeout(() => {
+                    updateStatus('📊 Transferencia masiva de archivos...');
+                    
+                    // Crear efecto de múltiples paquetes
+                    for (let i = 0; i < 3; i++) {
+                        setTimeout(() => {
+                            animatePacket(packets[i % packets.length], 'sb-hdd-bus', 1500);
+                            if (i === 0) highlightComponent('hdd');
+                        }, i * 200);
+                    }
+                    
+                    // Datos procesados por CPU
+                    setTimeout(() => {
+                        for (let i = 3; i < 6; i++) {
+                            setTimeout(() => {
+                                animatePacket(packets[i % packets.length], 'cpu-nb-bus', 600);
+                                if (i === 3) highlightComponent('northbridge');
+                            }, (i-3) * 150);
+                        }
+                    }, 800);
+                    
+                }, 10000);
+                
+                // Fase 6: Renderizado final y presentación
+                setTimeout(() => {
+                    updateStatus('🖼️ Renderizado final 4K...');
+                    
+                    // Intercambio intenso CPU-GPU
+                    animatePacket(packets[0], 'gpu-nb-bus', 500);
+                    setTimeout(() => {
+                        animatePacket(packets[1], 'gpu-nb-bus', 500);
+                    }, 300);
+                    
+                    setTimeout(() => {
+                        // Salida a múltiples displays simulada
+                        animatePacket(packets[2], 'gpu-monitor-bus', 800);
+                        highlightComponent('monitor');
+                        
+                        // Efecto final espectacular
+                        setTimeout(() => {
+                            Object.values(components).forEach((comp, index) => {
+                                setTimeout(() => {
+                                    comp.style.transform = 'scale(1.15)';
+                                    comp.style.filter = 'drop-shadow(0 0 30px #00ff88)';
+                                    setTimeout(() => {
+                                        comp.style.transform = 'scale(1)';
+                                        comp.style.filter = 'drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3))';
+                                    }, 400);
+                                }, index * 100);
+                            });
+                        }, 400);
+                    }, 600);
+                    
+                }, 12500);
+                
+                // Fase 7: Optimización y limpieza del sistema
+                setTimeout(() => {
+                    updateStatus('🧹 Optimizando sistema...');
+                    
+                    // Limpieza de memoria
+                    animatePacket(packets[3], 'cpu-ram-bus', 700);
+                    highlightComponent('ram');
+                    
+                    // Defragmentación simulada
+                    setTimeout(() => {
+                        for (let i = 0; i < 4; i++) {
+                            setTimeout(() => {
+                                animatePacket(packets[i % packets.length], 'sb-hdd-bus', 400);
+                                if (i === 0) highlightComponent('hdd');
+                            }, i * 100);
+                        }
+                    }, 500);
+                    
+                }, 15000);
+                
+                // Finalización con efecto de ondas
+                setTimeout(() => {
+                    updateStatus('✨ Demo completado exitosamente!');
+                    
+                    // Efecto de onda de finalización
+                    Object.values(buses).forEach((bus, index) => {
+                        setTimeout(() => {
+                            bus.style.filter = 'drop-shadow(0 0 40px currentColor)';
+                            setTimeout(() => {
+                                bus.style.filter = 'drop-shadow(0 0 8px currentColor)';
+                                bus.classList.remove('active');
+                            }, 300);
+                        }, index * 80);
+                    });
+                    
+                    // Restaurar estado
+                    setTimeout(() => {
+                        updateStatus('Sistema en reposo');
+                        isAnimating = false;
+                        
+                        // Mensaje final
+                        setTimeout(() => {
+                            updateStatus('🚀 Listo para nueva demo');
+                        }, 2000);
+                    }, 3000);
+                    
+                }, 17500);
+            };
+            
+            demoSequence();
+        }
+
+        // Event listeners
+        document.getElementById('auto-demo').addEventListener('click', autoDemo);
+        document.getElementById('read-ram').addEventListener('click', readRAM);
+        document.getElementById('write-ram').addEventListener('click', writeRAM);
+        document.getElementById('gpu-render').addEventListener('click', gpuRender);
+        document.getElementById('ssd-read').addEventListener('click', readSSD);
+        document.getElementById('hdd-write').addEventListener('click', writeHDD);
+        document.getElementById('network-data').addEventListener('click', networkData);
+        document.getElementById('reset').addEventListener('click', resetAll);
+
+        // Hover effects para componentes
+        Object.entries(components).forEach(([key, comp]) => {
+            comp.addEventListener('mouseenter', () => {
+                if (!isAnimating) {
+                    comp.style.transform = 'scale(1.05)';
+                    comp.style.filter = 'drop-shadow(0 0 15px #00d4ff)';
+                }
+            });
+            
+            comp.addEventListener('mouseleave', () => {
+                if (!isAnimating) {
+                    comp.style.transform = 'scale(1)';
+                    comp.style.filter = 'drop-shadow(0 5px 15px rgba(0, 0, 0, 0.3))';
+                }
+            });
+        });
+
+        // Información detallada en hover
+        const tooltips = {
+            'cpu-comp': {
+                title: 'CPU - Procesador Central',
+                details: 'Ejecuta instrucciones y coordina todas las operaciones del sistema. Conectado directamente a RAM y Northbridge.'
+            },
+            'ram-comp': {
+                title: 'RAM - Memoria de Acceso Aleatorio',
+                details: 'Almacena datos temporalmente para acceso rápido del CPU. Velocidades típicas: DDR4 (3200 MHz), DDR5 (4800+ MHz).'
+            },
+            'gpu-comp': {
+                title: 'GPU - Unidad de Procesamiento Gráfico',
+                details: 'Procesamiento paralelo para gráficos y cómputo. Conectada vía PCIe x16 para máximo ancho de banda.'
+            },
+            'northbridge-comp': {
+                title: 'Northbridge - Controlador de Memoria',
+                details: 'Maneja comunicaciones de alta velocidad entre CPU, RAM y GPU. En CPUs modernas está integrado.'
+            },
+            'southbridge-comp': {
+                title: 'Southbridge - Controlador de I/O',
+                details: 'Gestiona periféricos de menor velocidad: almacenamiento, USB, audio, red. También llamado PCH.'
+            },
+            'ssd-comp': {
+                title: 'NVMe SSD - Almacenamiento Sólido',
+                details: 'Almacenamiento no volátil de alta velocidad. Usa PCIe para velocidades de hasta 7+ GB/s.'
+            },
+            'hdd-comp': {
+                title: 'HDD - Disco Duro Mecánico',
+                details: 'Almacenamiento magnético de gran capacidad. Conectado vía SATA III (600 MB/s máximo).'
+            },
+            'monitor-comp': {
+                title: 'Monitor - Pantalla',
+                details: 'Recibe señales de video desde la GPU vía DisplayPort, HDMI o DVI. Soporta hasta 4K@144Hz.'
+            },
+            'network-comp': {
+                title: 'Tarjeta de Red',
+                details: 'Conectividad Ethernet o Wi-Fi. Típicamente 1 Gbps cableado, Wi-Fi 6 hasta 9.6 Gbps.'
+            }
+        };
+
+        // Crear tooltip dinámico
+        const tooltip = document.createElement('div');
+        tooltip.style.cssText = `
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 12px;
+            border-radius: 8px;
+            font-size: 12px;
+            max-width: 250px;
+            z-index: 1000;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            border: 1px solid rgba(0, 212, 255, 0.3);
+            backdrop-filter: blur(5px);
+        `;
+        document.body.appendChild(tooltip);
+
+        Object.entries(tooltips).forEach(([compId, info]) => {
+            const comp = document.getElementById(compId);
+            if (comp) {
+                comp.addEventListener('mouseenter', (e) => {
+                    tooltip.innerHTML = `<strong>${info.title}</strong><br><br>${info.details}`;
+                    tooltip.style.opacity = '1';
+                });
+                
+                comp.addEventListener('mousemove', (e) => {
+                    tooltip.style.left = (e.pageX + 15) + 'px';
+                    tooltip.style.top = (e.pageY - 10) + 'px';
+                });
+                
+                comp.addEventListener('mouseleave', () => {
+                    tooltip.style.opacity = '0';
+                });
+            }
+        });
+
+        // Animación inicial sutil
+        setTimeout(() => {
+            Object.values(buses).forEach((bus, index) => {
+                setTimeout(() => {
+                    bus.style.opacity = '0.3';
+                    setTimeout(() => {
+                        bus.style.opacity = '0.8';
+                    }, 200);
+                }, index * 100);
+            });
+        }, 1000);
+
+        // Actualización periódica de estado
+        setInterval(() => {
+            if (!isAnimating) {
+                const loads = [
+                    Math.floor(Math.random() * 30 + 10) + '%',
+                    (Math.random() * 4 + 4).toFixed(1) + 'GB',
+                    Math.floor(Math.random() * 20 + 30) + '%',
+                    (Math.random() * 2 + 0.5).toFixed(1) + ' GB/s'
+                ];
+                
+                document.getElementById('cpu-load').textContent = loads[0];
+                document.getElementById('ram-usage').textContent = loads[1];
+                document.getElementById('gpu-load').textContent = loads[2];
+                document.getElementById('data-transfer').textContent = loads[3];
+            }
+        }, 3000);
+
+        // Inicialización
+        updateStatus('Sistema listo');
+        
+        // Efectos de sonido simulados (visual)
+        function createSoundWave(x, y) {
+            const wave = document.createElement('div');
+            wave.style.cssText = `
+                position: absolute;
+                left: ${x}px;
+                top: ${y}px;
+                width: 20px;
+                height: 20px;
+                border: 2px solid #00d4ff;
+                border-radius: 50%;
+                pointer-events: none;
+                z-index: 999;
+            `;
+            document.body.appendChild(wave);
+            
+            // Animar expansión
+            let scale = 0;
+            const expand = setInterval(() => {
+                scale += 0.1;
+                wave.style.transform = `scale(${scale})`;
+                wave.style.opacity = 1 - scale / 3;
+                
+                if (scale >= 3) {
+                    clearInterval(expand);
+                    document.body.removeChild(wave);
+                }
+            }, 50);
+        }
+
+        // Agregar efectos de sonido visual a los botones
+        document.querySelectorAll('.btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const rect = btn.getBoundingClientRect();
+                createSoundWave(
+                    rect.left + rect.width / 2,
+                    rect.top + rect.height / 2
+                );
+            });
+        });
+
+        // Responsive design adjustments
+        function adjustForMobile() {
+            if (window.innerWidth <= 768) {
+                document.querySelector('svg').setAttribute('viewBox', '0 0 1100 700');
+                document.querySelector('svg').style.width = '100%';
+                document.querySelector('svg').style.height = 'auto';
+            }
+        }
+
+        window.addEventListener('resize', adjustForMobile);
+        adjustForMobile(); // Llamar al cargar
+    </script>
+</body>
+</html>
