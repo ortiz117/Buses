@@ -296,10 +296,6 @@
             <button class="btn" id="ssd-read">💾 Leer SSD</button>
             <button class="btn" id="hdd-write">🗄️ Escribir HDD</button>
             <button class="btn" id="network-data">🌐 Red</button>
-            <button class="btn" id="read-address">🎯 Leer Dir. 0101</button>
-            <button class="btn" id="write-address">✍️ Escribir Dir. 1100</button>
-            <button class="btn" id="cache-access">⚡ Cache Dir. 0011</button>
-            <button class="btn" id="usb-transfer">🔌 USB → RAM</button>
             <button class="btn danger" id="reset">🔄 Reset</button>
         </div>
 
@@ -335,31 +331,6 @@
                     <text class="component-text" x="170" y="165" text-anchor="middle">CPU</text>
                     <text class="component-text" x="170" y="185" text-anchor="middle" font-size="10">Intel/AMD</text>
                     <text class="speed-indicator" x="170" y="200" text-anchor="middle">3.8 GHz</text>
-                </g>
-
-                <!-- CPU Cache -->
-                <g class="component" id="cache-comp">
-                    <rect x="80" y="250" width="120" height="60" fill="url(#cpuGrad)" rx="8" />
-                    <text class="component-text" x="140" y="275" text-anchor="middle" font-size="12">L1/L2 Cache</text>
-                    <text class="speed-indicator" x="140" y="290" text-anchor="middle">32MB</text>
-                </g>
-
-                <!-- USB Controller -->
-                <g class="component" id="usb-comp">
-                    <rect x="600" y="500" width="120" height="60" fill="url(#storageGrad)" rx="8" />
-                    <text class="component-text" x="660" y="525" text-anchor="middle">USB Controller</text>
-                    <text class="speed-indicator" x="660" y="540" text-anchor="middle">USB 3.0</text>
-                </g>
-
-                <!-- Address/Data Display Boxes -->
-                <g id="address-display" style="opacity: 0;">
-                    <rect x="300" y="30" width="120" height="30" fill="rgba(0,212,255,0.9)" rx="5" />
-                    <text class="component-text" x="360" y="50" text-anchor="middle" font-size="11" id="address-text">Dir: 0101</text>
-                </g>
-                
-                <g id="data-display" style="opacity: 0;">
-                    <rect x="300" y="70" width="120" height="30" fill="rgba(0,255,136,0.9)" rx="5" />
-                    <text class="component-text" x="360" y="90" text-anchor="middle" font-size="11" id="data-text">Dato: 99</text>
                 </g>
 
                 <g class="component" id="ram-comp">
@@ -448,17 +419,9 @@
                 <text class="bus-label" x="680" y="95" text-anchor="middle">DisplayPort/HDMI</text>
                 <text class="speed-indicator" x="680" y="80" text-anchor="middle">32.4 Gbps</text>
 
-                <!-- Cache internal bus -->
-                <path id="cache-cpu-bus" class="bus-line" stroke="#ffff00" 
-                      d="M140,250 V220" />
-                <text class="bus-label" x="110" y="235" text-anchor="middle" font-size="10">Cache Bus</text>
-                <text class="speed-indicator" x="110" y="245" text-anchor="middle">1TB/s</text>
-
-                <!-- USB to Southbridge bus -->
-                <path id="usb-sb-bus" class="bus-line" stroke="#9333ea" 
-                      d="M660,500 V470 H680 V435" />
-                <text class="bus-label" x="630" y="465" text-anchor="middle" font-size="10">USB 3.0</text>
-                <text class="speed-indicator" x="630" y="475" text-anchor="middle">5 Gbps</text>
+                <path id="sb-network-bus" class="bus-line" stroke="#8b5cf6" 
+                      d="M760,420 Q800,420 800,380 Q800,240 Q800,220 Q800,200 850,200 H850 V210" />
+                <text class="bus-label" x="825" y="310" text-anchor="middle">PCIe</text>
 
                 <!-- Paquetes de datos -->
                 <circle id="packet1" class="data-packet" r="6" />
@@ -499,14 +462,6 @@
             <div class="legend-item">
                 <div class="legend-color" style="background: #10b981;"></div>
                 <span>Display</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #ffff00;"></div>
-                <span>Cache Internal</span>
-            </div>
-            <div class="legend-item">
-                <div class="legend-color" style="background: #9333ea;"></div>
-                <span>USB 3.0</span>
             </div>
         </div>
     </div>
@@ -579,9 +534,7 @@
             'sb-ssd': document.getElementById('sb-ssd-bus'),
             'sb-hdd': document.getElementById('sb-hdd-bus'),
             'gpu-monitor': document.getElementById('gpu-monitor-bus'),
-            'sb-network': document.getElementById('sb-network-bus'),
-            'cache-cpu': document.getElementById('cache-cpu-bus'),
-            'usb-sb': document.getElementById('usb-sb-bus')
+            'sb-network': document.getElementById('sb-network-bus')
         };
 
         const components = {
@@ -593,9 +546,7 @@
             ssd: document.getElementById('ssd-comp'),
             hdd: document.getElementById('hdd-comp'),
             monitor: document.getElementById('monitor-comp'),
-            network: document.getElementById('network-comp'),
-            cache: document.getElementById('cache-comp'),
-            usb: document.getElementById('usb-comp')
+            network: document.getElementById('network-comp')
         };
 
         // Funciones de utilidad
@@ -613,26 +564,8 @@
                 comp.style.transform = 'scale(1)';
             });
 
-            // Ocultar displays de direcciones/datos
-            document.getElementById('address-display').style.opacity = '0';
-            document.getElementById('data-display').style.opacity = '0';
-
             isAnimating = false;
             updateStatus('Sistema en reposo');
-        }
-
-        function showAddressData(address, data) {
-            document.getElementById('address-text').textContent = `Dir: ${address}`;
-            document.getElementById('data-text').textContent = `Dato: ${data}`;
-            document.getElementById('address-display').style.opacity = '1';
-            document.getElementById('data-display').style.opacity = '1';
-        }
-
-        function hideAddressData(delay = 3000) {
-            setTimeout(() => {
-                document.getElementById('address-display').style.opacity = '0';
-                document.getElementById('data-display').style.opacity = '0';
-            }, delay);
         }
 
         function activateBus(busId, duration = 2000) {
@@ -677,137 +610,14 @@
             }
         }
 
-        // Nuevas funciones para operaciones específicas de memoria
-
-        // 1. CPU solicita lectura dirección 0101 → devuelve dato 99
-        function readSpecificAddress() {
-            if (isAnimating) return;
-            isAnimating = true;
+        function updateStatus(message) {
+            document.getElementById('bus-activity').textContent = message;
             
-            updateStatus('📍 CPU solicita lectura dirección 0101...');
-            showAddressData('0101', '??');
-            
-            // CPU envía solicitud de dirección a RAM
-            activateBus('cpu-ram', 1500);
-            highlightComponent('cpu');
-            
-            animatePacket(packets[0], 'cpu-ram-bus', 1000, () => {
-                // RAM procesa la solicitud
-                highlightComponent('ram');
-                updateStatus('💾 RAM procesando dirección 0101...');
-                
-                setTimeout(() => {
-                    // RAM devuelve dato 99
-                    showAddressData('0101', '99');
-                    updateStatus('✅ RAM devuelve dato 99 de dirección 0101');
-                    
-                    animatePacket(packets[1], 'cpu-ram-bus', 1000, () => {
-                        highlightComponent('cpu');
-                        setTimeout(() => {
-                            updateStatus('✨ Lectura completada: Dir 0101 = Dato 99');
-                            hideAddressData();
-                            setTimeout(() => {
-                                isAnimating = false;
-                            }, 2000);
-                        }, 500);
-                    });
-                }, 800);
-            });
-        }
-
-        // 2. CPU envía dato 47 a dirección 1100 (escritura)
-        function writeSpecificAddress() {
-            if (isAnimating) return;
-            isAnimating = true;
-            
-            updateStatus('✍️ CPU escribiendo dato 47 en dirección 1100...');
-            showAddressData('1100', '47');
-            
-            activateBus('cpu-ram', 1500);
-            highlightComponent('cpu');
-            
-            animatePacket(packets[2], 'cpu-ram-bus', 1200, () => {
-                highlightComponent('ram');
-                updateStatus('💾 RAM almacenando dato 47 en dirección 1100...');
-                
-                setTimeout(() => {
-                    updateStatus('✅ Escritura completada: Dir 1100 ← Dato 47');
-                    hideAddressData();
-                    setTimeout(() => {
-                        isAnimating = false;
-                    }, 2000);
-                }, 1000);
-            });
-        }
-
-        // 3. CPU accede a cache para obtener dirección 0011
-        function accessCache() {
-            if (isAnimating) return;
-            isAnimating = true;
-            
-            updateStatus('⚡ CPU accediendo a cache L1/L2...');
-            showAddressData('0011', 'CACHE');
-            
-            activateBus('cache-cpu', 1000);
-            highlightComponent('cpu');
-            highlightComponent('cache');
-            
-            animatePacket(packets[3], 'cache-cpu-bus', 600, () => {
-                updateStatus('🎯 Cache HIT! Dato encontrado en L2');
-                showAddressData('0011', '156');
-                
-                setTimeout(() => {
-                    animatePacket(packets[4], 'cache-cpu-bus', 400, () => {
-                        updateStatus('⚡ Dato 156 entregado desde cache (ultra rápido!)');
-                        hideAddressData();
-                        setTimeout(() => {
-                            isAnimating = false;
-                        }, 2000);
-                    });
-                }, 600);
-            });
-        }
-
-        // 4. Dato llega por USB y se almacena en RAM
-        function usbToRAM() {
-            if (isAnimating) return;
-            isAnimating = true;
-            
-            updateStatus('🔌 Dispositivo USB transfiriendo datos...');
-            showAddressData('USB', 'DATA');
-            
-            // USB a Southbridge
-            activateBus('usb-sb', 1200);
-            highlightComponent('usb');
-            
-            animatePacket(packets[5], 'usb-sb-bus', 1000, () => {
-                highlightComponent('southbridge');
-                updateStatus('🚀 Datos USB llegando a Southbridge...');
-                
-                setTimeout(() => {
-                    // Southbridge a Northbridge
-                    activateBus('nb-sb', 1000);
-                    animatePacket(packets[6], 'nb-sb-bus', 800, () => {
-                        highlightComponent('northbridge');
-                        updateStatus('📡 Datos dirigiéndose a RAM...');
-                        
-                        setTimeout(() => {
-                            // Northbridge a RAM
-                            activateBus('cpu-ram', 1000);
-                            animatePacket(packets[0], 'cpu-ram-bus', 800, () => {
-                                highlightComponent('ram');
-                                showAddressData('2048', 'USB_FILE');
-                                updateStatus('✅ Archivo USB almacenado en RAM dirección 2048');
-                                
-                                hideAddressData();
-                                setTimeout(() => {
-                                    isAnimating = false;
-                                }, 2000);
-                            });
-                        }, 600);
-                    });
-                }, 800);
-            });
+            // Simular cambios en otros valores
+            document.getElementById('cpu-load').textContent = (Math.random() * 80 + 10).toFixed(0) + '%';
+            document.getElementById('ram-usage').textContent = (Math.random() * 8 + 4).toFixed(1) + 'GB';
+            document.getElementById('gpu-load').textContent = (Math.random() * 90 + 5).toFixed(0) + '%';
+            document.getElementById('data-transfer').textContent = (Math.random() * 5 + 0.5).toFixed(1) + ' GB/s';
         }
 
         // Animaciones específicas
@@ -1083,53 +893,19 @@
                     
                 }, 10000);
                 
-                // Fase 6: Operaciones específicas de memoria y cache
-                setTimeout(() => {
-                    updateStatus('🎯 Operaciones específicas de memoria...');
-                    
-                    // Acceso a cache
-                    setTimeout(() => {
-                        animatePacket(packets[0], 'cache-cpu-bus', 300);
-                        highlightComponent('cache');
-                        highlightComponent('cpu');
-                        showAddressData('0011', '156');
-                    }, 200);
-                    
-                    // Lectura específica de RAM
-                    setTimeout(() => {
-                        animatePacket(packets[1], 'cpu-ram-bus', 800);
-                        showAddressData('0101', '99');
-                        highlightComponent('ram');
-                    }, 800);
-                    
-                    // Escritura específica a RAM
-                    setTimeout(() => {
-                        animatePacket(packets[2], 'cpu-ram-bus', 800);
-                        showAddressData('1100', '47');
-                    }, 1400);
-                    
-                    // USB transfer
-                    setTimeout(() => {
-                        animatePacket(packets[3], 'usb-sb-bus', 1000);
-                        highlightComponent('usb');
-                        showAddressData('USB', 'FILE');
-                    }, 2000);
-                    
-                }, 15000);
-                
-                // Fase 7: Renderizado final y presentación
+                // Fase 6: Renderizado final y presentación
                 setTimeout(() => {
                     updateStatus('🖼️ Renderizado final 4K...');
                     
                     // Intercambio intenso CPU-GPU
-                    animatePacket(packets[4], 'gpu-nb-bus', 500);
+                    animatePacket(packets[0], 'gpu-nb-bus', 500);
                     setTimeout(() => {
-                        animatePacket(packets[5], 'gpu-nb-bus', 500);
+                        animatePacket(packets[1], 'gpu-nb-bus', 500);
                     }, 300);
                     
                     setTimeout(() => {
                         // Salida a múltiples displays simulada
-                        animatePacket(packets[6], 'gpu-monitor-bus', 800);
+                        animatePacket(packets[2], 'gpu-monitor-bus', 800);
                         highlightComponent('monitor');
                         
                         // Efecto final espectacular
@@ -1145,34 +921,29 @@
                                 }, index * 100);
                             });
                         }, 400);
-                        
-                        // Ocultar displays de datos después del show final
-                        setTimeout(() => {
-                            hideAddressData(500);
-                        }, 1000);
                     }, 600);
                     
-                }, 18000);
-
-                // Fase 8: Optimización y limpieza del sistema  
+                }, 12500);
+                
+                // Fase 7: Optimización y limpieza del sistema
                 setTimeout(() => {
                     updateStatus('🧹 Optimizando sistema...');
                     
                     // Limpieza de memoria
-                    animatePacket(packets[0], 'cpu-ram-bus', 700);
+                    animatePacket(packets[3], 'cpu-ram-bus', 700);
                     highlightComponent('ram');
                     
                     // Defragmentación simulada
                     setTimeout(() => {
-                        for (let i = 1; i < 4; i++) {
+                        for (let i = 0; i < 4; i++) {
                             setTimeout(() => {
-                                animatePacket(packets[i], 'sb-hdd-bus', 400);
-                                if (i === 1) highlightComponent('hdd');
+                                animatePacket(packets[i % packets.length], 'sb-hdd-bus', 400);
+                                if (i === 0) highlightComponent('hdd');
                             }, i * 100);
                         }
                     }, 500);
                     
-                }, 20500);
+                }, 15000);
                 
                 // Finalización con efecto de ondas
                 setTimeout(() => {
@@ -1200,7 +971,7 @@
                         }, 2000);
                     }, 3000);
                     
-                }, 23000);
+                }, 17500);
             };
             
             demoSequence();
@@ -1214,10 +985,6 @@
         document.getElementById('ssd-read').addEventListener('click', readSSD);
         document.getElementById('hdd-write').addEventListener('click', writeHDD);
         document.getElementById('network-data').addEventListener('click', networkData);
-        document.getElementById('read-address').addEventListener('click', readSpecificAddress);
-        document.getElementById('write-address').addEventListener('click', writeSpecificAddress);
-        document.getElementById('cache-access').addEventListener('click', accessCache);
-        document.getElementById('usb-transfer').addEventListener('click', usbToRAM);
         document.getElementById('reset').addEventListener('click', resetAll);
 
         // Hover effects para componentes
@@ -1274,14 +1041,6 @@
             'network-comp': {
                 title: 'Tarjeta de Red',
                 details: 'Conectividad Ethernet o Wi-Fi. Típicamente 1 Gbps cableado, Wi-Fi 6 hasta 9.6 Gbps.'
-            },
-            'cache-comp': {
-                title: 'Cache L1/L2/L3 - Memoria Ultra Rápida',
-                details: 'Memoria integrada en el CPU para acceso ultra rápido. L1: 32KB, L2: 256KB-1MB, L3: 8-32MB. Velocidad: >1TB/s'
-            },
-            'usb-comp': {
-                title: 'Controlador USB - Bus Serie Universal',
-                details: 'Maneja dispositivos USB conectados. USB 3.0: 5 Gbps, USB 3.1: 10 Gbps, USB 4: hasta 40 Gbps.'
             }
         };
 
